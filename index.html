@@ -4,47 +4,144 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Neon Highway Racer</title>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;overflow:hidden;background:#07101a;color:white;font-family:Arial,sans-serif}
-#hud{height:64px;background:#101a2b;border-bottom:2px solid #34506f;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
-#title{font-weight:900;letter-spacing:1px}
-#stats{display:flex;gap:14px;font-weight:800;font-size:14px}
-canvas{display:block;width:100vw;height:calc(100vh - 64px)}
-#menu{position:fixed;inset:64px 0 0;display:flex;align-items:center;justify-content:center;background:#02050ccc}
-.card{width:min(480px,92vw);padding:30px;text-align:center;background:#111b2d;border:1px solid #486184;border-radius:20px}
-h1{margin:0 0 10px;font-size:36px}
-p{color:#b8c7df;line-height:1.5}
-button{border:0;border-radius:10px;padding:14px 28px;background:#4d8dff;color:white;font-size:17px;font-weight:900;cursor:pointer}
-.small{margin-top:14px;color:#8999b3;font-size:13px}
+
+body{
+margin:0;
+overflow:hidden;
+background:#07101a;
+color:white;
+font-family:Arial,sans-serif
+}
+
+#hud{
+height:64px;
+background:#101a2b;
+border-bottom:2px solid #34506f;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 16px
+}
+
+#title{
+font-weight:900;
+letter-spacing:1px
+}
+
+#stats{
+display:flex;
+gap:14px;
+font-weight:800;
+font-size:14px
+}
+
+canvas{
+display:block;
+width:100vw;
+height:calc(100vh - 64px)
+}
+
+#menu{
+position:fixed;
+inset:64px 0 0;
+display:flex;
+align-items:center;
+justify-content:center;
+background:#02050ccc
+}
+
+.card{
+width:min(480px,92vw);
+padding:30px;
+text-align:center;
+background:#111b2d;
+border:1px solid #486184;
+border-radius:20px
+}
+
+h1{
+margin:0 0 10px;
+font-size:36px
+}
+
+p{
+color:#b8c7df;
+line-height:1.5
+}
+
+button{
+border:0;
+border-radius:10px;
+padding:14px 28px;
+background:#4d8dff;
+color:white;
+font-size:17px;
+font-weight:900;
+cursor:pointer
+}
+
+.small{
+margin-top:14px;
+color:#8999b3;
+font-size:13px
+}
 </style>
 </head>
 
 <body>
 
 <div id="hud">
-<div id="title">🏁 NEON HIGHWAY RACER</div>
-<div id="stats">
-<span>Level <b id="level">1</b>/5</span>
-<span>Score <b id="score">0</b></span>
-<span>Best <b id="best">0</b></span>
+
+<div id="title">
+🏁 NEON HIGHWAY RACER
 </div>
+
+<div id="stats">
+
+<span>
+Level <b id="level">1</b>/5
+</span>
+
+<span>
+Score <b id="score">0</b>
+</span>
+
+<span>
+Best <b id="best">0</b>
+</span>
+
+</div>
+
 </div>
 
 <canvas id="game"></canvas>
 
 <div id="menu">
+
 <div class="card">
-<h1 id="heading">🏎️ NEON HIGHWAY RACER</h1>
+
+<h1 id="heading">
+🏎️ NEON HIGHWAY RACER
+</h1>
+
 <p id="message">
 Complete 5 levels by reaching each target score.
 Every level gets faster and harder!
 </p>
-<button id="start">START RACE</button>
+
+<button id="start">
+START RACE
+</button>
+
 <div class="small">
 Computer: A/D or ←/→ · Mobile: touch left/right side
 </div>
+
 </div>
+
 </div>
 
 <script>
@@ -53,19 +150,40 @@ const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
 let W,H;
+
 let car;
 let enemies=[];
+
 let score=0;
 let level=1;
+
 let running=false;
 let last=0;
+
 let spawn=0;
 let roadMove=0;
+
 let touch=0;
 
 let best=Number(localStorage.neonBest||0);
 
-const targets=[500,1200,2100,3200,4500];
+
+/* =========================
+   LEVEL TARGETS
+========================= */
+
+const targets=[
+500,
+1200,
+2100,
+3200,
+4500
+];
+
+
+/* =========================
+   LEVEL NAMES
+========================= */
 
 const levelNames=[
 "City Highway",
@@ -75,6 +193,11 @@ const levelNames=[
 "Super Highway"
 ];
 
+
+/* =========================
+   BACKGROUNDS
+========================= */
+
 const backgrounds=[
 "#102718",
 "#090f24",
@@ -82,6 +205,55 @@ const backgrounds=[
 "#26301f",
 "#160d20"
 ];
+
+
+/* =========================
+   LEVEL DIFFICULTY
+=========================
+
+   speed = enemy speed
+   spawn = time between enemies
+   maxEnemies = enemies allowed
+*/
+
+const difficulty={
+
+1:{
+speed:0,
+spawn:0.85,
+maxEnemies:3
+},
+
+2:{
+speed:1.5,
+spawn:0.65,
+maxEnemies:4
+},
+
+3:{
+speed:3,
+spawn:0.50,
+maxEnemies:5
+},
+
+4:{
+speed:5,
+spawn:0.38,
+maxEnemies:6
+},
+
+5:{
+speed:7,
+spawn:0.28,
+maxEnemies:8
+}
+
+};
+
+
+/* =========================
+   RESIZE
+========================= */
 
 function resize(){
 
@@ -94,63 +266,126 @@ canvas.height=H;
 }
 
 resize();
+
 addEventListener("resize",resize);
+
+
+/* =========================
+   KEYBOARD
+========================= */
 
 let keys={};
 
 addEventListener("keydown",e=>{
+
 keys[e.key.toLowerCase()]=true;
+
 });
 
 addEventListener("keyup",e=>{
+
 keys[e.key.toLowerCase()]=false;
+
 });
+
+
+/* =========================
+   MOBILE CONTROLS
+========================= */
 
 canvas.addEventListener("touchstart",e=>{
+
 touch=e.touches[0].clientX<W/2?-1:1;
+
 },{passive:true});
 
+
+canvas.addEventListener("touchmove",e=>{
+
+touch=e.touches[0].clientX<W/2?-1:1;
+
+},{passive:true});
+
+
 canvas.addEventListener("touchend",()=>{
+
 touch=0;
+
 });
+
+
+/* =========================
+   ROAD
+========================= */
 
 function road(){
 
 return{
+
 left:W*.2,
+
 right:W*.8
+
 };
 
 }
+
+
+/* =========================
+   RESET GAME
+========================= */
 
 function reset(){
 
 let r=road();
 
 car={
+
 x:(r.left+r.right)/2,
+
 y:H-105,
+
 w:42,
+
 h:72
+
 };
 
 enemies=[];
+
 score=0;
+
 level=1;
+
 spawn=.3;
+
 roadMove=0;
 
 updateHUD();
 
 }
 
+
+/* =========================
+   HUD
+========================= */
+
 function updateHUD(){
 
 document.getElementById("level").textContent=level;
-document.getElementById("score").textContent=Math.floor(score);
-document.getElementById("best").textContent=best;
+
+document.getElementById("score").textContent=
+Math.floor(score);
+
+document.getElementById("best").textContent=
+best;
 
 }
+
+
+/* =========================
+   CREATE ENEMY
+========================= */
 
 function createEnemy(){
 
@@ -160,17 +395,38 @@ let laneWidth=(r.right-r.left)/4;
 
 let lane=Math.floor(Math.random()*4);
 
+
+/*
+Enemy speed increases
+with every level.
+*/
+
+let enemySpeed=
+4+
+Math.random()*2+
+difficulty[level].speed;
+
+
 enemies.push({
 
 x:r.left+laneWidth*(lane+.5),
+
 y:-90,
+
 w:42,
+
 h:72,
-speed:4+Math.random()*2
+
+speed:enemySpeed
 
 });
 
 }
+
+
+/* =========================
+   COLLISION
+========================= */
 
 function collision(a,b){
 
@@ -179,6 +435,11 @@ Math.abs(a.y-b.y)<60;
 
 }
 
+
+/* =========================
+   LEVEL COMPLETE
+========================= */
+
 function levelComplete(){
 
 running=false;
@@ -186,61 +447,108 @@ running=false;
 document.getElementById("heading").textContent=
 "⭐ LEVEL "+level+" COMPLETE!";
 
+
 document.getElementById("message").textContent=
-"Welcome to "+levelNames[level-1]+"! Next target: "+
+
+"Welcome to "+
+levelNames[level-1]+
+"! Next target: "+
 (targets[level]||"FINAL");
 
-document.getElementById("start").textContent=
-level<5?"NEXT LEVEL":"FINISH RACE";
 
-document.getElementById("menu").style.display="flex";
+document.getElementById("start").textContent=
+
+level<5?
+"NEXT LEVEL":
+"FINISH RACE";
+
+
+document.getElementById("menu").style.display=
+"flex";
 
 }
+
+
+/* =========================
+   GAME OVER
+========================= */
 
 function gameOver(){
 
 running=false;
 
+
 if(score>best){
 
 best=Math.floor(score);
+
 localStorage.neonBest=best;
 
 }
 
-document.getElementById("heading").textContent="💥 RACE OVER";
+
+document.getElementById("heading").textContent=
+"💥 RACE OVER";
+
 
 document.getElementById("message").textContent=
-"Your score: "+Math.floor(score)+". Try again and beat your best!";
 
-document.getElementById("start").textContent="RACE AGAIN";
+"Your score: "+
+Math.floor(score)+
+". Try again and beat your best!";
 
-document.getElementById("menu").style.display="flex";
+
+document.getElementById("start").textContent=
+"RACE AGAIN";
+
+
+document.getElementById("menu").style.display=
+"flex";
 
 }
+
+
+/* =========================
+   WIN
+========================= */
 
 function won(){
 
 running=false;
 
+
 if(score>best){
 
 best=Math.floor(score);
+
 localStorage.neonBest=best;
 
 }
 
-document.getElementById("heading").textContent="🏆 YOU WON!";
+
+document.getElementById("heading").textContent=
+"🏆 YOU WON!";
+
 
 document.getElementById("message").textContent=
+
 "Congratulations! You completed all 5 levels! Final score: "+
 Math.floor(score);
 
-document.getElementById("start").textContent="PLAY AGAIN";
 
-document.getElementById("menu").style.display="flex";
+document.getElementById("start").textContent=
+"PLAY AGAIN";
+
+
+document.getElementById("menu").style.display=
+"flex";
 
 }
+
+
+/* =========================
+   GAME UPDATE
+========================= */
 
 function update(dt){
 
@@ -248,272 +556,679 @@ let r=road();
 
 let direction=0;
 
-if(keys["a"]||keys["arrowleft"]) direction=-1;
-if(keys["d"]||keys["arrowright"]) direction=1;
 
-if(touch) direction=touch;
+/* PLAYER CONTROL */
 
-car.x+=direction*7;
+if(
+keys["a"]||
+keys["arrowleft"]
+){
 
-car.x=Math.max(
-r.left+30,
-Math.min(r.right-30,car.x)
-);
-
-let speedMultiplier=1+level*.16;
-
-roadMove=(roadMove+6*speedMultiplier)%80;
-
-spawn-=dt;
-
-if(spawn<=0){
-
-createEnemy();
-
-spawn=Math.max(.30,.78-level*.06);
+direction=-1;
 
 }
 
-for(let i=enemies.length-1;i>=0;i--){
+
+if(
+keys["d"]||
+keys["arrowright"]
+){
+
+direction=1;
+
+}
+
+
+if(touch){
+
+direction=touch;
+
+}
+
+
+/*
+Player movement gets
+slightly faster each level.
+*/
+
+let playerSpeed=
+7+
+(level-1)*0.8;
+
+
+car.x+=direction*
+playerSpeed;
+
+
+car.x=Math.max(
+
+r.left+30,
+
+Math.min(
+r.right-30,
+car.x
+)
+
+);
+
+
+/* =========================
+   ROAD SPEED
+========================= */
+
+let speedMultiplier=
+1+
+(level-1)*0.22;
+
+
+roadMove=
+(roadMove+
+6*
+speedMultiplier)
+%80;
+
+
+/* =========================
+   ENEMY SPAWNING
+========================= */
+
+spawn-=dt;
+
+
+/*
+More enemies can exist
+on higher levels.
+*/
+
+if(
+spawn<=0 &&
+enemies.length<
+difficulty[level].maxEnemies
+){
+
+createEnemy();
+
+
+/*
+Spawn interval becomes
+smaller every level.
+*/
+
+spawn=
+difficulty[level].spawn;
+
+
+/*
+Small randomness keeps
+the spawning natural.
+*/
+
+spawn+=Math.random()*0.18;
+
+}
+
+
+/* =========================
+   MOVE ENEMIES
+========================= */
+
+for(
+let i=enemies.length-1;
+i>=0;
+i--
+){
 
 let e=enemies[i];
 
-e.y+=(e.speed+level)*60*dt;
+
+/*
+Enemy speed increases
+with level.
+*/
+
+e.y+=
+e.speed*
+60*
+dt;
+
 
 if(collision(car,e)){
 
 gameOver();
+
 return;
 
 }
 
+
 if(e.y>H+100){
 
 enemies.splice(i,1);
+
 score+=10;
 
 }
 
 }
 
-score+=dt*7;
 
-if(level<5 && score>=targets[level-1]){
+/* =========================
+   SCORE
+========================= */
+
+score+=
+dt*
+(
+7+
+(level-1)*1.5
+);
+
+
+/* =========================
+   LEVEL SYSTEM
+========================= */
+
+if(
+level<5 &&
+score>=targets[level-1]
+){
 
 level++;
 
 updateHUD();
+
 levelComplete();
+
 return;
 
 }
 
-if(level===5 && score>=targets[4]){
+
+/* =========================
+   FINAL WIN
+========================= */
+
+if(
+level===5 &&
+score>=targets[4]
+){
 
 updateHUD();
+
 won();
+
 return;
 
 }
+
 
 updateHUD();
 
 }
 
-function drawCar(x,y,w,h,player){
+
+/* =========================
+   DRAW CAR
+========================= */
+
+function drawCar(
+x,
+y,
+w,
+h,
+player
+){
 
 ctx.save();
 
 ctx.translate(x,y);
 
-ctx.fillStyle=player?"#43d9ff":"#ff5570";
+
+ctx.fillStyle=
+player?
+"#43d9ff":
+"#ff5570";
+
 
 ctx.shadowBlur=18;
-ctx.shadowColor=ctx.fillStyle;
+
+ctx.shadowColor=
+ctx.fillStyle;
+
 
 ctx.beginPath();
 
 ctx.roundRect(
+
 -w/2,
 -h/2,
 w,
 h,
 9
+
 );
 
 ctx.fill();
 
+
 ctx.shadowBlur=0;
 
-ctx.fillStyle="#18263b";
+
+ctx.fillStyle=
+"#18263b";
+
 
 ctx.fillRect(
+
 -w*.31,
 -h*.25,
 w*.62,
 h*.23
+
 );
 
+
 ctx.fillRect(
+
 -w*.31,
 h*.03,
 w*.62,
 h*.21
+
 );
 
-ctx.fillStyle="#070a0f";
 
-ctx.fillRect(-w/2-5,-h*.3,7,20);
-ctx.fillRect(w/2-2,-h*.3,7,20);
-ctx.fillRect(-w/2-5,h*.1,7,20);
-ctx.fillRect(w/2-2,h*.1,7,20);
+ctx.fillStyle=
+"#070a0f";
+
+
+ctx.fillRect(
+-w/2-5,
+-h*.3,
+7,
+20
+);
+
+
+ctx.fillRect(
+w/2-2,
+-h*.3,
+7,
+20
+);
+
+
+ctx.fillRect(
+-w/2-5,
+h*.1,
+7,
+20
+);
+
+
+ctx.fillRect(
+w/2-2,
+h*.1,
+7,
+20
+);
+
 
 ctx.fillStyle="white";
 
-ctx.fillRect(-w*.24,-h*.47,w*.48,5);
+
+ctx.fillRect(
+-w*.24,
+-h*.47,
+w*.48,
+5
+);
+
 
 ctx.restore();
 
 }
 
+
+/* =========================
+   DRAW WORLD
+========================= */
+
 function draw(){
 
-ctx.clearRect(0,0,W,H);
+ctx.clearRect(
+0,
+0,
+W,
+H
+);
+
 
 let r=road();
 
-ctx.fillStyle=backgrounds[level-1];
 
-ctx.fillRect(0,0,W,H);
+/* BACKGROUND */
 
-ctx.fillStyle=level===4?"#55533f":"#30343b";
+ctx.fillStyle=
+backgrounds[level-1];
 
 ctx.fillRect(
+0,
+0,
+W,
+H
+);
+
+
+/* ROAD */
+
+ctx.fillStyle=
+level===4?
+"#55533f":
+"#30343b";
+
+
+ctx.fillRect(
+
 r.left,
 0,
 r.right-r.left,
 H
+
 );
 
-ctx.fillStyle="#252a32";
+
+ctx.fillStyle=
+"#252a32";
+
 
 ctx.fillRect(
+
 r.left+8,
 0,
 r.right-r.left-16,
 H
+
 );
 
+
+/* LANE MARKINGS */
+
 ctx.strokeStyle="#eee";
+
 ctx.lineWidth=4;
 
-ctx.setLineDash([35,45]);
-ctx.lineDashOffset=-roadMove;
+ctx.setLineDash([
+35,
+45
+]);
 
-for(let i=1;i<4;i++){
+ctx.lineDashOffset=
+-roadMove;
 
-let x=r.left+(r.right-r.left)*i/4;
+
+for(
+let i=1;
+i<4;
+i++
+){
+
+let x=
+r.left+
+(r.right-r.left)*
+i/4;
+
 
 ctx.beginPath();
-ctx.moveTo(x,0);
-ctx.lineTo(x,H);
+
+ctx.moveTo(
+x,
+0
+);
+
+ctx.lineTo(
+x,
+H
+);
+
 ctx.stroke();
 
 }
 
+
 ctx.setLineDash([]);
+
+
+/* ROAD EDGES */
 
 ctx.fillStyle="#ffd447";
 
-ctx.fillRect(r.left-5,0,5,H);
-ctx.fillRect(r.right,0,5,H);
+
+ctx.fillRect(
+r.left-5,
+0,
+5,
+H
+);
+
+
+ctx.fillRect(
+r.right,
+0,
+5,
+H
+);
+
+
+/* =========================
+   RAIN
+========================= */
 
 if(level===3){
 
 ctx.fillStyle="#ffffff55";
 
-for(let i=0;i<90;i++){
 
-let x=(i*83+roadMove*2)%W;
-let y=(i*47+roadMove*5)%H;
+for(
+let i=0;
+i<90;
+i++
+){
 
-ctx.fillRect(x,y,2,12);
+let x=
+(i*83+
+roadMove*2)
+%W;
+
+
+let y=
+(i*47+
+roadMove*5)
+%H;
+
+
+ctx.fillRect(
+x,
+y,
+2,
+12
+);
 
 }
 
 }
+
+
+/* =========================
+   NIGHT LIGHTS
+========================= */
 
 if(level===2){
 
 ctx.fillStyle="#fff8";
 
-for(let i=0;i<12;i++){
 
-let x=(i*97)%W;
-let y=(i*73)%H;
+for(
+let i=0;
+i<12;
+i++
+){
+
+let x=
+(i*97)%W;
+
+
+let y=
+(i*73)%H;
+
 
 ctx.beginPath();
-ctx.arc(x,y,2,0,7);
+
+ctx.arc(
+x,
+y,
+2,
+0,
+7
+);
+
 ctx.fill();
 
 }
 
 }
 
+
+/* =========================
+   ENEMIES
+========================= */
+
 enemies.forEach(e=>{
-drawCar(e.x,e.y,e.w,e.h,false);
-});
 
 drawCar(
+e.x,
+e.y,
+e.w,
+e.h,
+false
+);
+
+});
+
+
+/* PLAYER */
+
+drawCar(
+
 car.x,
 car.y,
 car.w,
 car.h,
 true
+
 );
 
 }
+
+
+/* =========================
+   GAME LOOP
+========================= */
 
 function loop(time){
 
 if(!running)return;
 
-let dt=Math.min(
+
+let dt=
+Math.min(
 .033,
 (time-last)/1000
 );
 
+
 last=time;
 
+
 update(dt);
+
 draw();
+
 
 requestAnimationFrame(loop);
 
 }
 
-const menu=document.getElementById("menu");
-const heading=document.getElementById("heading");
-const message=document.getElementById("message");
-const start=document.getElementById("start");
+
+/* =========================
+   MENU
+========================= */
+
+const menu=
+document.getElementById("menu");
+
+
+const heading=
+document.getElementById("heading");
+
+
+const message=
+document.getElementById("message");
+
+
+const start=
+document.getElementById("start");
+
+
+/* =========================
+   START BUTTON
+========================= */
 
 start.onclick=()=>{
 
-if(level===5 && score>=targets[4]){
+
+/*
+Start a completely new game
+after game over or winning.
+*/
+
+if(
+level===5 &&
+score>=targets[4]
+){
+
 reset();
+
 }
-else if(level===1 && score===0){
+
+
+/*
+Start first level.
+*/
+
+else if(
+level===1 &&
+score===0
+){
+
 reset();
+
 }
+
 
 enemies=[];
+
 spawn=.2;
 
-menu.style.display="none";
+menu.style.display=
+"none";
+
 
 running=true;
 
-last=performance.now();
+last=
+performance.now();
+
 
 requestAnimationFrame(loop);
 
